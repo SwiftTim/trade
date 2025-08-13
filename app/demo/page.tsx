@@ -10,14 +10,17 @@ import Link from "next/link"
 export default function DemoPage() {
   const [signals, setSignals] = useState([])
   const [loading, setLoading] = useState(true)
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
 
   useEffect(() => {
-    // Simulate real-time signal updates
     const fetchSignals = async () => {
       try {
         const response = await fetch("/api/signals")
         const data = await response.json()
-        setSignals(data.signals || [])
+        if (data.success) {
+          setSignals(data.signals || [])
+          setLastUpdate(new Date())
+        }
       } catch (error) {
         console.error("Error fetching signals:", error)
       } finally {
@@ -26,7 +29,7 @@ export default function DemoPage() {
     }
 
     fetchSignals()
-    const interval = setInterval(fetchSignals, 30000) // Update every 30 seconds
+    const interval = setInterval(fetchSignals, 15000)
 
     return () => clearInterval(interval)
   }, [])
@@ -44,9 +47,14 @@ export default function DemoPage() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold mb-4">Live Trading Signals Demo</h1>
-          <p className="text-slate-300 mb-6">
-            Real-time signals from professional traders - This is the actual trading data!
+          <p className="text-slate-300 mb-2">
+            Real-time signals from professional traders - This data updates every 15 seconds!
           </p>
+          {lastUpdate && (
+            <p className="text-sm text-blue-400 mb-6">
+              Last updated: {lastUpdate.toLocaleTimeString()} - Data refreshes automatically
+            </p>
+          )}
           <div className="flex gap-4 justify-center">
             <Link href="/register">
               <Button className="bg-blue-600 hover:bg-blue-700">Get Full Access - Register Now</Button>
@@ -61,7 +69,7 @@ export default function DemoPage() {
 
         <div className="grid gap-6">
           {signals.map((signal, index) => (
-            <Card key={index} className="bg-slate-800 border-slate-700">
+            <Card key={signal.id} className="bg-slate-800 border-slate-700">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl text-white flex items-center gap-2">
@@ -71,6 +79,9 @@ export default function DemoPage() {
                       <TrendingDown className="h-5 w-5 text-red-400" />
                     )}
                     {signal.pair}
+                    <Badge variant="outline" className="text-xs text-green-400 border-green-400">
+                      LIVE
+                    </Badge>
                   </CardTitle>
                   <Badge
                     variant={signal.direction === "BUY" ? "default" : "destructive"}
